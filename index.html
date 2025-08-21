@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Forms Auto-Responder</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --danger-gradient: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --text-color: #333;
+            --border-color: #e9ecef;
+            --shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-bs-theme="dark"] {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --danger-gradient: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            --card-bg: rgba(33, 37, 41, 0.95);
+            --text-color: #f8f9fa;
+            --border-color: #495057;
+            --shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+        
+        .main-container {
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+            margin: 2rem auto;
+            max-width: 1000px;
+            transition: all 0.3s ease;
+        }
+        
+        .header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 2rem;
+            border-radius: 20px 20px 0 0;
+            text-align: center;
+            position: relative;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 0.5rem;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+        
+        .form-section {
+            padding: 2rem;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid var(--border-color);
+            transition: all 0.3s ease;
+            background: var(--card-bg);
+            color: var(--text-color);
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .btn {
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+        }
+        
+        .btn-primary {
+            background: var(--primary-gradient);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-danger {
+            background: var(--danger-gradient);
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .btn-success {
+            background: var(--success-gradient);
+        }
+
+        .btn-warning {
+            background: var(--secondary-gradient);
+        }
+        
+        .log-container {
+            background: var(--card-bg);
+            border-radius: 10px;
+            border: 2px solid var(--border-color);
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-idle { background-color: #6c757d; }
+        .status-running { background-color: #28a745; animation: pulse 1.5s infinite; }
+        .status-completed { background-color: #17a2b8; }
+        .status-error { background-color: #dc3545; }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .progress-container {
+            margin: 1rem 0;
+        }
+        
+        .log-entry {
+            margin-bottom: 0.25rem;
+            padding: 0.25rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+        
+        .card {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            background: var(--card-bg);
+            transition: all 0.3s ease;
+        }
+
+        .stats-card {
+            background: var(--success-gradient);
+            color: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .stats-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .instructions {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        [data-bs-theme="dark"] .instructions {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-item {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+            border: 2px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .feature-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .speed-indicator {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+
+        .speed-normal { background: #28a745; color: white; }
+        .speed-fast { background: #ffc107; color: black; }
+        .speed-ultra { background: #dc3545; color: white; }
+
+        .form-tips {
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 4px solid #667eea;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 10px 10px 0;
+        }
+
+        [data-bs-theme="dark"] .form-tips {
+            background: rgba(102, 126, 234, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-container">
+            <div class="header">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+                    <i class="fas fa-moon" id="themeIcon"></i>
+                </button>
+                <h1><i class="fas fa-robot me-3"></i>Google Forms Auto-Responder</h1>
+                <p class="mb-0">Automate your Google Forms responses with ease</p>
+            </div>
+            
+            <div class="form-section">
+                <!-- Instructions Section -->
+                <div class="instructions">
+                    <h5><i class="fas fa-info-circle me-2"></i>Important Setup Instructions</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Google Form Settings:</strong>
+                            <ul class="mb-0">
+                                <li>Set form to "Anyone with the link can respond"</li>
+                                <li>Disable "Limit to 1 response" if enabled</li>
+                                <li>Make sure form is not in "Private" mode</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Browser Requirements:</strong>
+                            <ul class="mb-0">
+                                <li>Google Chrome must be installed</li>
+                                <li>Ensure stable internet connection</li>
+                                <li>Close other Chrome instances if needed</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feature Grid -->
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <div class="feature-icon"><i class="fas fa-bolt"></i></div>
+                        <h6>Fast Automation</h6>
+                        <small>Submit hundreds of responses quickly</small>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+                        <h6>Safe & Secure</h6>
+                        <small>Headless mode for privacy</small>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+                        <h6>Real-time Monitoring</h6>
+                        <small>Live progress tracking</small>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon"><i class="fas fa-cog"></i></div>
+                        <h6>Customizable</h6>
+                        <small>Multiple speed modes</small>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-cog me-2"></i>Configuration</h5>
+                                
+                                <div class="mb-3">
+                                    <label for="formUrl" class="form-label">Google Form URL</label>
+                                    <input type="url" class="form-control" id="formUrl" 
+                                           placeholder="https://docs.google.com/forms/d/...">
+                                    <div class="form-tips">
+                                        <small><i class="fas fa-lightbulb me-1"></i>
+                                            Paste your Google Form URL here. Make sure the form is set to "Anyone with the link can respond".
+                                        </small>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label for="responseCount" class="form-label">Number of Responses</label>
+                                        <input type="number" class="form-control" id="responseCount" 
+                                               min="1" max="1000" value="5">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="speedMode" class="form-label">Speed Mode</label>
+                                        <select class="form-select" id="speedMode" onchange="updateSpeedIndicator()">
+                                            <option value="normal">Normal</option>
+                                            <option value="fast">Fast</option>
+                                            <option value="ultra">Ultra</option>
+                                        </select>
+                                        <span class="speed-indicator speed-normal" id="speedIndicator">Balanced</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-check mt-3">
+                                    <input class="form-check-input" type="checkbox" id="headless" checked>
+                                    <label class="form-check-label" for="headless">
+                                        Run in headless mode (recommended)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" id="startBtn" onclick="startBot()">
+                                <i class="fas fa-play me-2"></i>Start Bot
+                            </button>
+                            <button class="btn btn-danger" id="stopBtn" onclick="stopBot()" disabled>
+                                <i class="fas fa-stop me-2"></i>Stop Bot
+                            </button>
+                            <button class="btn btn-warning" onclick="clearSession()">
+                                <i class="fas fa-trash me-2"></i>Clear Session
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <i class="fas fa-chart-line me-2"></i>Status & Progress
+                                </h5>
+                                
+                                <div class="mb-3">
+                                    <strong>Status: </strong>
+                                    <span id="statusText">Idle</span>
+                                    <span class="status-indicator status-idle" id="statusIndicator"></span>
+                                </div>
+                                
+                                <div class="progress-container" id="progressContainer" style="display: none;">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Progress</span>
+                                        <span id="progressText">0 / 0</span>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-bar" id="progressBar" role="progressbar" 
+                                             style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-info" id="infoAlert" style="display: none;">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <span id="infoText"></span>
+                                </div>
+                                
+                                <div class="alert alert-danger" id="errorAlert" style="display: none;">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <span id="errorText"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stats Cards -->
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="stats-card">
+                                    <div class="stats-number" id="totalResponses">0</div>
+                                    <small>Total Responses</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="stats-card">
+                                    <div class="stats-number" id="successRate">0%</div>
+                                    <small>Success Rate</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-terminal me-2"></i>Activity Log
+                        </h5>
+                        <div class="log-container" id="logContainer">
+                            <div class="text-muted">No activity yet. Start the bot to see logs here.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let statusInterval;
+        let currentStatus = 'idle';
+        let totalResponses = 0;
+        let successfulResponses = 0;
+
+        // Theme Management
+        function toggleTheme() {
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('themeIcon');
+            
+            if (html.getAttribute('data-bs-theme') === 'dark') {
+                html.setAttribute('data-bs-theme', 'light');
+                themeIcon.className = 'fas fa-moon';
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.setAttribute('data-bs-theme', 'dark');
+                themeIcon.className = 'fas fa-sun';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('themeIcon');
+            
+            html.setAttribute('data-bs-theme', savedTheme);
+            themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+
+        function updateSpeedIndicator() {
+            const speedMode = document.getElementById('speedMode').value;
+            const indicator = document.getElementById('speedIndicator');
+            
+            indicator.className = `speed-indicator speed-${speedMode}`;
+            
+            const descriptions = {
+                normal: 'Balanced',
+                fast: 'Quick',
+                ultra: 'Maximum'
+            };
+            
+            indicator.textContent = descriptions[speedMode];
+        }
+
+        function updateStats(submitted, target) {
+            totalResponses = submitted;
+            successfulResponses = target > 0 ? Math.round((submitted / target) * 100) : 0;
+            
+            document.getElementById('totalResponses').textContent = submitted;
+            document.getElementById('successRate').textContent = `${successfulResponses}%`;
+        }
+
+        function updateStatus(status, submitted = 0, target = 0) {
+            currentStatus = status;
+            const statusText = document.getElementById('statusText');
+            const statusIndicator = document.getElementById('statusIndicator');
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+
+            // Update status text and indicator
+            statusText.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+            statusIndicator.className = `status-indicator status-${status}`;
+
+            // Update buttons
+            if (status === 'running') {
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                progressContainer.style.display = 'block';
+            } else {
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                if (status === 'completed' || status === 'error') {
+                    progressContainer.style.display = 'block';
+                }
+            }
+
+            // Update progress
+            if (target > 0) {
+                const percentage = Math.round((submitted / target) * 100);
+                progressBar.style.width = `${percentage}%`;
+                progressBar.setAttribute('aria-valuenow', percentage);
+                progressText.textContent = `${submitted} / ${target}`;
+                updateStats(submitted, target);
+            }
+        }
+
+        function showInfo(message) {
+            const alert = document.getElementById('infoAlert');
+            const text = document.getElementById('infoText');
+            text.textContent = message;
+            alert.style.display = 'block';
+            setTimeout(() => alert.style.display = 'none', 5000);
+        }
+
+        function showError(message) {
+            const alert = document.getElementById('errorAlert');
+            const text = document.getElementById('errorText');
+            text.textContent = message;
+            alert.style.display = 'block';
+        }
+
+        function updateLogs(logs) {
+            const container = document.getElementById('logContainer');
+            if (logs.length === 0) {
+                container.innerHTML = '<div class="text-muted">No activity yet. Start the bot to see logs here.</div>';
+                return;
+            }
+
+            container.innerHTML = logs.map(log => `<div class="log-entry">${log}</div>`).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function startBot() {
+            const formUrl = document.getElementById('formUrl').value.trim();
+            const count = parseInt(document.getElementById('responseCount').value);
+            const headless = document.getElementById('headless').checked;
+            const speedMode = document.getElementById('speedMode').value;
+
+            if (!formUrl) {
+                showError('Please enter a Google Form URL');
+                return;
+            }
+
+            if (count < 1 || count > 1000) {
+                showError('Number of responses must be between 1 and 1000');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        form_url: formUrl,
+                        count: count,
+                        headless: headless,
+                        speed_mode: speedMode
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showInfo('Bot started successfully!');
+                    updateStatus('running');
+                    startStatusPolling();
+                } else {
+                    showError(data.error || 'Failed to start bot');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            }
+        }
+
+        async function stopBot() {
+            try {
+                const response = await fetch('/api/stop', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showInfo('Stop requested');
+                } else {
+                    showError(data.error || 'Failed to stop bot');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            }
+        }
+
+        async function clearSession() {
+            try {
+                const response = await fetch('/api/clear');
+                const data = await response.json();
+
+                if (response.ok) {
+                    showInfo('Session cleared');
+                    updateStatus('idle');
+                    updateLogs([]);
+                    updateStats(0, 0);
+                    stopStatusPolling();
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            }
+        }
+
+        async function pollStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+
+                if (response.ok) {
+                    updateStatus(data.status, data.submitted_count, data.target_count);
+                    updateLogs(data.logs);
+
+                    if (data.status === 'completed' || data.status === 'error') {
+                        stopStatusPolling();
+                    }
+                }
+            } catch (error) {
+                console.error('Status polling error:', error);
+            }
+        }
+
+        function startStatusPolling() {
+            if (statusInterval) {
+                clearInterval(statusInterval);
+            }
+            statusInterval = setInterval(pollStatus, 1000);
+        }
+
+        function stopStatusPolling() {
+            if (statusInterval) {
+                clearInterval(statusInterval);
+                statusInterval = null;
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTheme();
+            updateStatus('idle');
+            updateSpeedIndicator();
+        });
+    </script>
+</body>
+</html>
